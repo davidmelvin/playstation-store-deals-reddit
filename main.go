@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -12,12 +15,14 @@ import (
 
 const productURLPrefix = "https://store.playstation.com/en-us/product/"
 const testingURL = "https://store.playstation.com/en-us/category/99369cc3-0ac2-46de-b437-e8c70c79f55e"
+const PRODUCTS_PER_COMMENT = 60
 
 type ProductData struct {
 	ProductMap map[string]Product
 	PriceMap   map[string]SkuPrice
 }
 
+// TODO: make sure we're not skipping too much.. does this match the final product count?
 func getProductDataFromJSONStrings(pages []string) ProductData {
 	productMap := make(map[string]Product)
 	priceMap := make(map[string]SkuPrice)
@@ -62,16 +67,49 @@ func getProductDataFromJSONStrings(pages []string) ProductData {
 	return productData
 }
 
+func useSampleData() []string {
+	var pages []string
+
+	sampleDataFiles, err := ioutil.ReadDir("sample-data")
+	if err != nil {
+		log.Fatal("Cannot read sample data directory: ", err)
+	}
+
+	for _, sampleDataFile := range sampleDataFiles {
+
+		jsonFile, err := os.Open(fmt.Sprintf("sample-data/%s", sampleDataFile.Name()))
+		if err != nil {
+			fmt.Println("error reading json file: ", err)
+		}
+		defer jsonFile.Close()
+
+		jsonBytes, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			fmt.Println("error reading json bytes: ", err)
+		}
+
+		pages = append(pages, string(jsonBytes))
+	}
+
+	return pages
+
+}
+
 func main() {
-	pages := scrape()
+	pages := useSampleData()
+	// pages := scrape()
 	productData := getProductDataFromJSONStrings(pages)
 	fmt.Printf("There are %d products and %d prices\n", len(productData.ProductMap), len(productData.PriceMap))
 	if len(productData.ProductMap) != len(productData.PriceMap) {
 		fmt.Println("we don't have exactly one price for each product")
 	}
-	// fmt.Println(productData.getTable())
+	tables, numTables := productData.getTables()
+	fmt.Printf("there are %d comments\n", numTables)
+	fmt.Println(tables)
 }
 
+// TODO: what if the link doesn't end in "/1" as it should?
+// I think PS Store will handle it via redirect, but need to confirm
 func scrape() []string {
 	pageNumber := 1
 	var jsonBodies []string
@@ -113,25 +151,51 @@ func scrape() []string {
 
 	c.Visit(fmt.Sprintf("%s/%d", testingURL, pageNumber))
 
+	c.Wait()
 	return jsonBodies
+}
+
+func (productData *ProductData) getProductRowChunks() [][]string {
+	var productRows []string
+
+	for _, product := range productData.ProductMap {
+		productRow := productData.getProductRow(product)
+
+		productRows = append(productRows, productRow)
+	}
+
+	// adapted from: https://freshman.tech/snippets/go/split-slice-into-chunks/
+	// reddit max comment size is 10,000 characters, so we break up the comments here
+	var chunks [][]string
+	for i := 0; i < len(productRows); i += PRODUCTS_PER_COMMENT {
+		end := i + PRODUCTS_PER_COMMENT
+
+		if end > len(productRows) {
+			end = len(productRows)
+		}
+
+		chunks = append(chunks, productRows[i:end])
+	}
+	return chunks
 }
 
 // TODO: sorted aphabetically or by price? currently there is no guarantee on ordering
 // TODO: include PS plus vs not ps plus?
 // TODO: what is the biggest comment we can make in a reddit comment?
-func (productData *ProductData) getTable() string {
+func (productData *ProductData) getTables() ([]string, int) {
 	// TODO: tie top row order to getProductRow return order to make less fragile
 	topRow := "Title | Discounted price | % Off | Regular Price\n"
 	alignmentRow := ":--|:--|:--|:--\n"
 
-	var productRows []string
-	for _, product := range productData.ProductMap {
-		productRows = append(productRows, productData.getProductRow(product))
+	productChunks := productData.getProductRowChunks()
+
+	var tables []string
+	for _, chunk := range productChunks {
+		chunkString := strings.Join(chunk, "\n")
+		tables = append(tables, topRow+alignmentRow+chunkString)
 	}
 
-	productRowsString := strings.Join(productRows, "\n")
-
-	return topRow + alignmentRow + productRowsString
+	return tables, len(tables)
 }
 
 func (productData *ProductData) getProductRow(product Product) string {
