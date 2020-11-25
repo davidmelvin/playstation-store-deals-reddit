@@ -11,11 +11,9 @@ import (
 
 func main() {
 	jsonFile, err := os.Open("examples/data2.json")
-
 	if err != nil {
 		fmt.Println("error opening JSON file: ", err)
 	}
-
 	defer jsonFile.Close()
 
 	jsonBytes, err := ioutil.ReadAll(jsonFile)
