@@ -5,11 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 )
 
-func main() {
+type ProductData struct {
+	Products []Product
+	Prices   []SkuPrice
+}
+
+func getProductData() ProductData {
+	var productData ProductData
+
 	jsonFile, err := os.Open("examples/data2.json")
 	if err != nil {
 		fmt.Println("error opening JSON file: ", err)
@@ -56,12 +64,40 @@ func main() {
 
 			prices = append(prices, price)
 		}
-
 	}
 
-	fmt.Printf("there are %d products\n", len(products))
-	fmt.Printf("there are %d prices\n", len(prices))
+	productData.Products = products
+	productData.Prices = prices
+	return productData
+}
 
-	fmt.Printf("product: %+v\n", products[0])
-	fmt.Printf("price: %+v\n", prices[0])
+func main() {
+
+	productData := getProductData()
+	fmt.Printf(getTable(productData.Products))
+
+	// fmt.Printf("there are %d products\n", len(products))
+	// fmt.Printf("there are %d prices\n", len(prices))
+
+	// fmt.Printf("product: %+v\n", products[0])
+	// fmt.Printf("price: %+v\n", prices[0])
+}
+
+func getTable(products []Product) string {
+	topRow := "Title | %% Off | Discounted price | Regular Price\n"
+	alignmentRow := ":--|:--|:--|:--\n"
+
+	var productRows []string
+	for _, product := range products {
+		productRows = append(productRows, fmt.Sprintf("%s", product))
+	}
+
+	strings.Join(productRows, "")
+
+	return fmt.Sprintf("%s%s%s", topRow, alignmentRow, productRows)
+}
+
+// name, price, % off, regular price
+func (p Product) String() string {
+	return fmt.Sprintf("%s|%s|%s|%s\n", p.Name, "price", "percent off", "original price")
 }
