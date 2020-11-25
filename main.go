@@ -10,9 +10,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-const priceIDPrefix = "$Product"
-const priceIDSuffix = "en-us.price"
-
 type ProductData struct {
 	ProductMap map[string]Product
 	PriceMap   map[string]SkuPrice
