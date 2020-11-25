@@ -10,6 +10,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const productURLPrefix = "https://store.playstation.com/en-us/product/"
+
 type ProductData struct {
 	ProductMap map[string]Product
 	PriceMap   map[string]SkuPrice
@@ -98,6 +100,8 @@ func (productData *ProductData) getTable() string {
 func (productData *ProductData) getProductRow(product Product) string {
 	priceData := productData.PriceMap[product.ID]
 
+	hyperlinkedName := fmt.Sprintf("[%s](%s)", product.Name, productURLPrefix+product.ID)
+
 	// make sure this isn't fragile. possibly no guarantees
 	discountedPrice := priceData.DiscountedPrice
 	discountPercentage, ok := priceData.DiscountText.(string)
@@ -105,5 +109,5 @@ func (productData *ProductData) getProductRow(product Product) string {
 		discountPercentage = "0%"
 	}
 	basePrice := priceData.BasePrice
-	return fmt.Sprintf("%s | %s | %s | %s", product.Name, discountedPrice, discountPercentage, basePrice)
+	return fmt.Sprintf("%s | %s | %s | %s", hyperlinkedName, discountedPrice, discountPercentage, basePrice)
 }
