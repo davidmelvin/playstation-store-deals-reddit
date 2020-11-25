@@ -81,7 +81,8 @@ func main() {
 
 // TODO: sorted aphabetically or by price? currently there is no guarantee on ordering
 func (productData *ProductData) getTable() string {
-	topRow := "Title | % Off | Discounted price | Regular Price\n"
+	// TODO: tie top row order to getProductRow return order to make less fragile
+	topRow := "Title | Discounted price | % Off | Regular Price\n"
 	alignmentRow := ":--|:--|:--|:--\n"
 
 	var productRows []string
