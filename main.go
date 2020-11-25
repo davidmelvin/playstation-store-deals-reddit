@@ -96,16 +96,17 @@ func useSampleData() []string {
 }
 
 func main() {
-	pages := useSampleData()
+	getSubmissions()
+	// pages := useSampleData()
 	// pages := scrape()
-	productData := getProductDataFromJSONStrings(pages)
-	fmt.Printf("There are %d products and %d prices\n", len(productData.ProductMap), len(productData.PriceMap))
-	if len(productData.ProductMap) != len(productData.PriceMap) {
-		fmt.Println("we don't have exactly one price for each product")
-	}
-	tables, numTables := productData.getTables()
-	fmt.Printf("there are %d comments\n", numTables)
-	fmt.Println(tables)
+	// productData := getProductDataFromJSONStrings(pages)
+	// fmt.Printf("There are %d products and %d prices\n", len(productData.ProductMap), len(productData.PriceMap))
+	// if len(productData.ProductMap) != len(productData.PriceMap) {
+	// 	fmt.Println("we don't have exactly one price for each product")
+	// }
+	// tables, numTables := productData.getTables()
+	// fmt.Printf("there are %d comments\n", numTables)
+	// fmt.Println(tables)
 }
 
 // TODO: what if the link doesn't end in "/1" as it should?
