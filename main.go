@@ -74,7 +74,7 @@ func getProductData() ProductData {
 func main() {
 
 	productData := getProductData()
-	fmt.Printf(getTable(productData.Products))
+	fmt.Printf(productData.getTable())
 
 	// fmt.Printf("there are %d products\n", len(products))
 	// fmt.Printf("there are %d prices\n", len(prices))
@@ -83,13 +83,13 @@ func main() {
 	// fmt.Printf("price: %+v\n", prices[0])
 }
 
-func getTable(products []Product) string {
+func (productData *ProductData) getTable() string {
 	topRow := "Title | %% Off | Discounted price | Regular Price\n"
 	alignmentRow := ":--|:--|:--|:--\n"
 
 	var productRows []string
-	for _, product := range products {
-		productRows = append(productRows, fmt.Sprintf("%s", product))
+	for _, product := range productData.Products {
+		productRows = append(productRows, productData.getProductRow(product))
 	}
 
 	strings.Join(productRows, "")
@@ -98,6 +98,7 @@ func getTable(products []Product) string {
 }
 
 // name, price, % off, regular price
-func (p Product) String() string {
-	return fmt.Sprintf("%s|%s|%s|%s\n", p.Name, "price", "percent off", "original price")
+// TODO: is there a better way to architect the data here to avoid copying structs over and over?
+func (productData *ProductData) getProductRow(product Product) string {
+	return fmt.Sprintf("%s|%s|%s|%s\n", product.Name, "price", "percent off", "original price")
 }
