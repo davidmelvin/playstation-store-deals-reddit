@@ -83,6 +83,7 @@ func scrape() []string {
 		fmt.Println("Visiting: ", r.URL.String())
 	})
 	c.Limit(&colly.LimitRule{
+		Delay:       3 * time.Second,
 		RandomDelay: 5 * time.Second,
 	})
 
