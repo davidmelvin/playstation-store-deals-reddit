@@ -25,20 +25,43 @@ func main() {
 
 	json.Unmarshal(jsonBytes, &data)
 	var products []Product
-	for _, v := range data.Props.ApolloState {
+	var prices []SkuPrice
+	for k, v := range data.Props.ApolloState {
 		apolloStateData, ok := v.(map[string]interface{})
 		if !ok {
 			fmt.Println("apollo state data is not a map[string]interface{}")
 		}
-		if apolloStateData["__typename"] == "Product" {
+		switch apolloStateData["__typename"] {
+
+		case "Product":
 			var product Product
 			if err := mapstructure.Decode(apolloStateData, &product); err != nil {
 				fmt.Println("could not decode appollo state data as a product")
 			}
 
+			// fmt.Printf("product k: %+v\n", k)
+			// fmt.Printf("product: %+v\n", product)
+
 			products = append(products, product)
+
+		case "SkuPrice":
+			var price SkuPrice
+			if err := mapstructure.Decode(apolloStateData, &price); err != nil {
+				fmt.Println("could not decode appollo state data as a price")
+			}
+			price.ProductID = k
+			// fmt.Printf("price k: %+v\n", k)
+
+			// fmt.Printf("price: %+v\n", price)
+
+			prices = append(prices, price)
 		}
+
 	}
 
-	fmt.Printf("there are %d products", len(products))
+	fmt.Printf("there are %d products\n", len(products))
+	fmt.Printf("there are %d prices\n", len(prices))
+
+	fmt.Printf("product: %+v\n", products[0])
+	fmt.Printf("price: %+v\n", prices[0])
 }

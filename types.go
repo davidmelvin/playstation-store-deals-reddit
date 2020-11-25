@@ -203,3 +203,15 @@ type Product struct {
 	Skus                                []Skus      `json:"skus"`
 	Typename                            string      `json:"__typename"`
 }
+
+type SkuPrice struct {
+	ProductID             string
+	BasePrice             string          `json:"basePrice"`
+	DiscountedPrice       string          `json:"discountedPrice"`
+	DiscountText          interface{}     `json:"discountText"`
+	IsFree                bool            `json:"isFree"`
+	ServiceBranding       ServiceBranding `json:"serviceBranding"`
+	UpsellServiceBranding interface{}     `json:"upsellServiceBranding"`
+	UpsellText            interface{}     `json:"upsellText"`
+	Typename              string          `json:"__typename"`
+}
