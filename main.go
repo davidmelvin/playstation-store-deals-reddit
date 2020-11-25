@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/mitchellh/mapstructure"
 )
 
 const productURLPrefix = "https://store.playstation.com/en-us/product/"
+const testingURL = "https://store.playstation.com/en-us/category/99369cc3-0ac2-46de-b437-e8c70c79f55e"
 
 type ProductData struct {
 	ProductMap map[string]Product
@@ -67,10 +69,11 @@ func main() {
 	if len(productData.ProductMap) != len(productData.PriceMap) {
 		fmt.Println("we don't have exactly one price for each product")
 	}
-	fmt.Println(productData.getTable())
+	// fmt.Println(productData.getTable())
 }
 
 func scrape() []string {
+	pageNumber := 1
 	var jsonBodies []string
 	c := colly.NewCollector(
 		colly.AllowedDomains("store.playstation.com"),
@@ -79,18 +82,42 @@ func scrape() []string {
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting: ", r.URL.String())
 	})
+	c.Limit(&colly.LimitRule{
+		RandomDelay: 5 * time.Second,
+	})
 
 	c.OnHTML("#__NEXT_DATA__", func(e *colly.HTMLElement) {
-		fmt.Println("found next.js data!")
+		fmt.Println("found next.js data! Will add it to the list...")
 		jsonBodies = append(jsonBodies, e.Text)
 	})
 
-	c.Visit("https://store.playstation.com/en-us/category/99369cc3-0ac2-46de-b437-e8c70c79f55e/1")
+	c.OnHTML(`button[data-qa="ems-sdk-grid-paginator-next-page-btn"]`, func(e *colly.HTMLElement) {
+		fmt.Println("found a next page button! Checking if it's disabled.")
+		buttonIsDisabled := false
+		for _, node := range e.DOM.Nodes {
+			for _, attr := range node.Attr {
+				if attr.Key == "disabled" {
+					fmt.Println("Found disabled next button. Will stop here")
+					buttonIsDisabled = true
+					break
+				}
+			}
+		}
+		if !buttonIsDisabled {
+			fmt.Printf("next page button is not disabled.  Visiting to next page: #%d\n", pageNumber+1)
+			pageNumber++
+			c.Visit(fmt.Sprintf("%s/%d", testingURL, pageNumber))
+		}
+	})
+
+	c.Visit(fmt.Sprintf("%s/%d", testingURL, pageNumber))
 
 	return jsonBodies
 }
 
 // TODO: sorted aphabetically or by price? currently there is no guarantee on ordering
+// TODO: include PS plus vs not ps plus?
+// TODO: what is the biggest comment we can make in a reddit comment?
 func (productData *ProductData) getTable() string {
 	// TODO: tie top row order to getProductRow return order to make less fragile
 	topRow := "Title | Discounted price | % Off | Regular Price\n"
