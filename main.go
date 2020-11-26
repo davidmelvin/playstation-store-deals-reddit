@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +16,7 @@ import (
 
 const productURLPrefix = "https://store.playstation.com/en-us/product/"
 const testingURL = "https://store.playstation.com/en-us/category/99369cc3-0ac2-46de-b437-e8c70c79f55e"
-const PRODUCTS_PER_COMMENT = 60
+const ProductsPerComment = 60
 
 type ProductData struct {
 	ProductMap map[string]Product
@@ -96,7 +97,8 @@ func useSampleData() []string {
 }
 
 func main() {
-	getSubmissions()
+	ctx := context.TODO()
+	getSubmissions(ctx)
 	// pages := useSampleData()
 	// pages := scrape()
 	// productData := getProductDataFromJSONStrings(pages)
@@ -168,8 +170,8 @@ func (productData *ProductData) getProductRowChunks() [][]string {
 	// adapted from: https://freshman.tech/snippets/go/split-slice-into-chunks/
 	// reddit max comment size is 10,000 characters, so we break up the comments here
 	var chunks [][]string
-	for i := 0; i < len(productRows); i += PRODUCTS_PER_COMMENT {
-		end := i + PRODUCTS_PER_COMMENT
+	for i := 0; i < len(productRows); i += ProductsPerComment {
+		end := i + ProductsPerComment
 
 		if end > len(productRows) {
 			end = len(productRows)
