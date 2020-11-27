@@ -111,6 +111,7 @@ func main() {
 	// fmt.Println(tables)
 }
 
+// Only works on links of the form https://store.playstation.com/en-us/category/3fc38af7-0e2c-4de6-a585-3e562e54b81e/1
 // TODO: what if the link doesn't end in "/1" as it should?
 // I think PS Store will handle it via redirect, but need to confirm
 func scrape() []string {

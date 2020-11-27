@@ -5,10 +5,13 @@ import (
 	"fmt"
 
 	"log"
+	"regexp"
 
 	"github.com/jzelinskie/geddit"
 	"github.com/kelseyhightower/envconfig"
 )
+
+const UUIDRegexPattern = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
 type Credentials struct {
 	ClientID     string `envconfig:"REDDIT_CLIENT_ID"`
@@ -61,8 +64,11 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 		log.Fatalf("Unable to get auth token: %s\n", err)
 	}
 
+	// TODO: What do count and after do?
 	subOpts := geddit.ListingOptions{
-		Limit: 10,
+		Limit: 25,
+		After: "t3_jv266z",
+		Count: 75,
 	}
 
 	submissions, err := o.SubredditSubmissions("ps4Deals", geddit.NewSubmissions, subOpts)
@@ -70,7 +76,17 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 		log.Printf("Unable to get subreddit posts: %s\n", err)
 	}
 
-	fmt.Println(submissions)
+	psStoreProductListRegexPattern := fmt.Sprintf(`https:/\/store\.playstation\.com\/en-us\/category\/%s\/[\d]+`, UUIDRegexPattern)
+	re := regexp.MustCompile(psStoreProductListRegexPattern)
 
-	return []*geddit.Submission{}, nil
+	var matchingSubmissions []*geddit.Submission
+	for _, submission := range submissions {
+		fmt.Println(submission.URL)
+		if !submission.IsSelf && re.MatchString(submission.URL) {
+			matchingSubmissions = append(matchingSubmissions, submission)
+		}
+	}
+	fmt.Println(matchingSubmissions)
+
+	return matchingSubmissions, nil
 }

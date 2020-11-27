@@ -16,3 +16,5 @@ This reddit bot is designed to see when there are new deals pages from [store.pl
 1. Improve stability
 1. Automatically revoke the oauth token when we don't need it anymore
 1. Add/improve error handling and logging
+1. make CSV and upload to Google Sheets and post that link?
+1. Figure out how to support links outside https://store.playstation.com/en-us/category/3fc38af7-0e2c-4de6-a585-3e562e54b81e/1 format. Maybe just accept mentions with those links as comments, and I or someone else can trigger it manually. If it's a link like https://store.playstation.com/en-us/view/25d9b52a-7dcf-11ea-acb6-06293b18fe04/e62084eb-203f-11eb-aadc-062143ad1e8d, can crawl that page for the "See all" link to the correct page
