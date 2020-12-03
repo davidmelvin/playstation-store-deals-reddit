@@ -11,17 +11,28 @@ import (
 	"time"
 
 	"github.com/gocolly/colly"
+	"github.com/jzelinskie/geddit"
 	"github.com/mitchellh/mapstructure"
 )
 
 const productURLPrefix = "https://store.playstation.com/en-us/product/"
 const testingURL = "https://store.playstation.com/en-us/category/99369cc3-0ac2-46de-b437-e8c70c79f55e"
-const ProductsPerComment = 60
+const ProductsPerComment = 50
 
 type ProductData struct {
 	ProductMap map[string]Product
 	PriceMap   map[string]SkuPrice
 }
+
+type DealData struct {
+	psStoreLink  string
+	submission   *geddit.Submission
+	productData  ProductData
+	productJSONs []string
+}
+
+// Deals maps reddit full ID to that deal's data
+type Deals map[string]*DealData
 
 // TODO: make sure we're not skipping too much.. does this match the final product count?
 func getProductDataFromJSONStrings(pages []string) ProductData {
@@ -96,25 +107,59 @@ func useSampleData() []string {
 
 }
 
+func createDealsFromSubmissions(submissions []*geddit.Submission) Deals {
+	deals := make(Deals)
+
+	for _, submission := range submissions {
+		deals[submission.FullID] = &DealData{
+			psStoreLink: submission.URL,
+			submission:  submission,
+		}
+	}
+
+	return deals
+}
+
+func (deals Deals) addProductDatatoDeals() {
+	for _, dealData := range deals {
+		pages := scrape(dealData.psStoreLink)
+		productData := getProductDataFromJSONStrings(pages)
+		fmt.Printf("There are %d products and %d prices\n", len(productData.ProductMap), len(productData.PriceMap))
+
+		// TODO: add some real error handling here
+		if len(productData.ProductMap) != len(productData.PriceMap) {
+			fmt.Println("we don't have exactly one price for each product")
+			continue
+		}
+
+		dealData.productData = productData
+
+		_, numTables := productData.getTables()
+		fmt.Printf("there are %d comments to write \n", numTables)
+		// fmt.Println(tables)
+	}
+}
+
 func main() {
 	ctx := context.TODO()
-	getSubmissions(ctx)
-	// pages := useSampleData()
-	// pages := scrape()
-	// productData := getProductDataFromJSONStrings(pages)
-	// fmt.Printf("There are %d products and %d prices\n", len(productData.ProductMap), len(productData.PriceMap))
-	// if len(productData.ProductMap) != len(productData.PriceMap) {
-	// 	fmt.Println("we don't have exactly one price for each product")
-	// }
-	// tables, numTables := productData.getTables()
-	// fmt.Printf("there are %d comments\n", numTables)
-	// fmt.Println(tables)
+
+	matchingSubmissions, err := getSubmissions(ctx)
+	if err != nil {
+		log.Printf("error getting latest submissions: %s", err)
+	}
+
+	deals := createDealsFromSubmissions(matchingSubmissions)
+	deals.addProductDatatoDeals()
 }
 
 // Only works on links of the form https://store.playstation.com/en-us/category/3fc38af7-0e2c-4de6-a585-3e562e54b81e/1
 // TODO: what if the link doesn't end in "/1" as it should?
 // I think PS Store will handle it via redirect, but need to confirm
-func scrape() []string {
+func scrape(startURL string) []string {
+	// need to remove page number of original startURL
+	urlParts := strings.Split(startURL, "/")
+	baseURL := strings.Join(urlParts[0:len(urlParts)-1], "/")
+
 	pageNumber := 1
 	var jsonBodies []string
 	c := colly.NewCollector(
@@ -149,11 +194,11 @@ func scrape() []string {
 		if !buttonIsDisabled {
 			fmt.Printf("next page button is not disabled.  Visiting to next page: #%d\n", pageNumber+1)
 			pageNumber++
-			c.Visit(fmt.Sprintf("%s/%d", testingURL, pageNumber))
+			c.Visit(fmt.Sprintf("%s/%d", baseURL, pageNumber))
 		}
 	})
 
-	c.Visit(fmt.Sprintf("%s/%d", testingURL, pageNumber))
+	c.Visit(fmt.Sprintf("%s/%d", baseURL, pageNumber))
 
 	c.Wait()
 	return jsonBodies

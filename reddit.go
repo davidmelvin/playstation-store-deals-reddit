@@ -21,28 +21,6 @@ type Credentials struct {
 }
 
 func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
-	// adapted from https://gist.github.com/sergeyklay/9f51bcd6905788382b5deb790c68eac1
-	// config := clientcredentials.Config{
-	// 	ClientID:     os.Getenv("REDDIT_CLIENT_ID"),
-	// 	ClientSecret: os.Getenv("REDDIT_CLIENT_SECRET"),
-	// 	TokenURL:     "https://www.reddit.com/api/v1/access_token",
-	// }
-
-	// client := config.Client(ctx)
-
-	// resp, err := client.Get("https://oauth.reddit.com/api/v1/me")
-	// if err != nil {
-	// 	fmt.Printf("Error making submissions request: %s", err)
-	// }
-
-	// body, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	fmt.Printf("Error reading response body bytes: %s", err)
-	// }
-	// defer resp.Body.Close()
-
-	// fmt.Println("body", body)
-
 	var creds Credentials
 	err := envconfig.Process("REDDIT", &creds)
 	if err != nil {
@@ -67,8 +45,6 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 	// TODO: What do count and after do?
 	subOpts := geddit.ListingOptions{
 		Limit: 25,
-		After: "t3_jv266z",
-		Count: 75,
 	}
 
 	submissions, err := o.SubredditSubmissions("ps4Deals", geddit.NewSubmissions, subOpts)
@@ -81,12 +57,20 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 
 	var matchingSubmissions []*geddit.Submission
 	for _, submission := range submissions {
-		fmt.Println(submission.URL)
 		if !submission.IsSelf && re.MatchString(submission.URL) {
+			fmt.Println(submission.FullID)
 			matchingSubmissions = append(matchingSubmissions, submission)
 		}
 	}
 	fmt.Println(matchingSubmissions)
 
 	return matchingSubmissions, nil
+}
+
+func getURLs(submissions []*geddit.Submission) []string {
+	var URLs []string
+	for _, submission := range submissions {
+		URLs = append(URLs, submission.URL)
+	}
+	return URLs
 }

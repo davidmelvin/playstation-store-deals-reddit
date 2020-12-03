@@ -39,3 +39,4 @@ This reddit bot is designed to see when there are new deals pages from [store.pl
                 "__typename": "SkuPrice"
             },
             ```
+1. Unexport struct fields where possible
