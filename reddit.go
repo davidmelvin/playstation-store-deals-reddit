@@ -20,15 +20,18 @@ type Credentials struct {
 	Password     string `envconfig:"REDDIT_PASSWORD"`
 }
 
+var OAuthSession *geddit.OAuthSession
+
+const subredditName = "bottesting"
+
 func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 	var creds Credentials
 	err := envconfig.Process("REDDIT", &creds)
 	if err != nil {
 		log.Fatalf("cannot get env vars for credentials: %s", err)
 	}
-	fmt.Printf("creds: %#v", creds)
 
-	o, err := geddit.NewOAuthSession(
+	OAuthSession, err = geddit.NewOAuthSession(
 		creds.ClientID,
 		creds.ClientSecret,
 		"User agent: golang v0.1 https://github.com/davidmelvin/playstation-store-deals-reddit (by /u/GamingDealsBot)",
@@ -37,7 +40,7 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 	if err != nil {
 		log.Fatalf("Unable to create geddit oauth session: %s\n", err)
 	}
-	err = o.LoginAuth(creds.Username, creds.Password)
+	err = OAuthSession.LoginAuth(creds.Username, creds.Password)
 	if err != nil {
 		log.Fatalf("Unable to get auth token: %s\n", err)
 	}
@@ -47,7 +50,7 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 		Limit: 25,
 	}
 
-	submissions, err := o.SubredditSubmissions("ps4Deals", geddit.NewSubmissions, subOpts)
+	submissions, err := OAuthSession.SubredditSubmissions(subredditName, geddit.NewSubmissions, subOpts)
 	if err != nil {
 		log.Printf("Unable to get subreddit posts: %s\n", err)
 	}
@@ -62,15 +65,26 @@ func getSubmissions(ctx context.Context) ([]*geddit.Submission, error) {
 			matchingSubmissions = append(matchingSubmissions, submission)
 		}
 	}
-	fmt.Println(matchingSubmissions)
+	log.Println("matching submissions: ", matchingSubmissions)
 
 	return matchingSubmissions, nil
 }
 
-func getURLs(submissions []*geddit.Submission) []string {
-	var URLs []string
-	for _, submission := range submissions {
-		URLs = append(URLs, submission.URL)
+func (deals Deals) makeComments() error {
+	for _, dealData := range deals {
+		comments := dealData.commentTables
+
+		var replyTo geddit.Replier = dealData.submission
+		for _, comment := range comments {
+			submittedComment, err := OAuthSession.Reply(replyTo, comment)
+			if err != nil {
+				log.Printf("error submitting comment: %s\n", err)
+				return err
+			}
+			log.Println("wrote comment: ", submittedComment.FullPermalink())
+			replyTo = submittedComment
+		}
 	}
-	return URLs
+
+	return nil
 }

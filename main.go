@@ -25,10 +25,10 @@ type ProductData struct {
 }
 
 type DealData struct {
-	psStoreLink  string
-	submission   *geddit.Submission
-	productData  ProductData
-	productJSONs []string
+	psStoreLink   string
+	submission    *geddit.Submission
+	productData   ProductData
+	commentTables []string
 }
 
 // Deals maps reddit full ID to that deal's data
@@ -120,7 +120,7 @@ func createDealsFromSubmissions(submissions []*geddit.Submission) Deals {
 	return deals
 }
 
-func (deals Deals) addProductDatatoDeals() {
+func (deals Deals) addProductDataToDeals() {
 	for _, dealData := range deals {
 		pages := scrape(dealData.psStoreLink)
 		productData := getProductDataFromJSONStrings(pages)
@@ -129,13 +129,14 @@ func (deals Deals) addProductDatatoDeals() {
 		// TODO: add some real error handling here
 		if len(productData.ProductMap) != len(productData.PriceMap) {
 			fmt.Println("we don't have exactly one price for each product")
-			continue
 		}
 
 		dealData.productData = productData
 
-		_, numTables := productData.getTables()
+		tables, numTables := productData.getTables()
 		fmt.Printf("there are %d comments to write \n", numTables)
+		dealData.commentTables = tables
+
 		// fmt.Println(tables)
 	}
 }
@@ -149,7 +150,8 @@ func main() {
 	}
 
 	deals := createDealsFromSubmissions(matchingSubmissions)
-	deals.addProductDatatoDeals()
+	deals.addProductDataToDeals()
+	deals.makeComments()
 }
 
 // Only works on links of the form https://store.playstation.com/en-us/category/3fc38af7-0e2c-4de6-a585-3e562e54b81e/1
@@ -171,7 +173,7 @@ func scrape(startURL string) []string {
 	})
 	c.Limit(&colly.LimitRule{
 		Delay:       3 * time.Second,
-		RandomDelay: 5 * time.Second,
+		RandomDelay: 20 * time.Second,
 	})
 
 	c.OnHTML("#__NEXT_DATA__", func(e *colly.HTMLElement) {
