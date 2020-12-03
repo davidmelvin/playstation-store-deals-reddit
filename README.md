@@ -7,7 +7,8 @@ This reddit bot is designed to see when there are new deals pages from [store.pl
 1. Run `source .env` in the root directory to set the env vars for the bot to authenticate
 1. Run `go run .` or `go build`
 ## To-do
-1. Use a reddit api wrapper to listen to get the latest posts on r/ps4deals
+1. KMS encrypt AWS env  vars
+1. add rate limits for posting comments to reddit (and checking submissions?)
 1. Consider saving the last timestamp we searched for posts in DynamoDB or something similar to avoid extra work between invocations. Think about DB structure. Consider storing: timestamp, urls used, time comment was added. Consider having to re-run on the same post and marking a comment as sucessful or not
 1. Check if there is a r/ps5deals and how that would differ
 1. use a reddit api wrapper to post comments
