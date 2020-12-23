@@ -19,6 +19,7 @@ This reddit bot is designed to see when there are new deals pages from [store.pl
 1. Add/improve error handling and logging
 1. make CSV and upload to Google Sheets and post that link?
 1. Figure out how to support links outside https://store.playstation.com/en-us/category/3fc38af7-0e2c-4de6-a585-3e562e54b81e/1 format. Maybe just accept mentions with those links as comments, and I or someone else can trigger it manually. If it's a link like https://store.playstation.com/en-us/view/25d9b52a-7dcf-11ea-acb6-06293b18fe04/e62084eb-203f-11eb-aadc-062143ad1e8d, can crawl that page for the "See all" link to the correct page
+1. Make the subreddit name an environment variable to quick testing?
 1. Are PSN Plus vs normal discounts different? Where are the differences stored in next.js data? Example of a deals page with a separate PS plus price: https://store.playstation.com/en-us/category/30826e82-088f-4cc2-aaa4-81507aa31353/1. The PS Plus discounts are marked as upsells:
 ```
 "$Product:UP4133-CUSA09936_00-MUDRUNNERUS00000:en-us.price": {
